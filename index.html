@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHIT论文网</title>
+    <style>
+        *{ margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            width: 100%;
+            background-color: #e9e9e9;
+            font-family: Arial, sans-serif;
+        }
+
+        /* ===== 顶部栏 ===== */
+        .top-font {
+            padding: 15px 20px;
+            background-color: #ffe5a8;
+            position: relative;
+        }
+        .top-font .center {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        .top-font .right {
+            color: #666;
+            font-size: 13px;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .time-bar {
+            background-color: #fff8e8;
+            padding: 8px 20px;
+            font-size: 13px;
+            color: #555;
+            border-bottom: 1px solid #e0d5b8;
+            text-align: center;
+        }
+
+        /* ===== 占位提示 ===== */
+        .placeholder {
+            max-width: 700px;
+            margin: 80px auto;
+            text-align: center;
+            padding: 50px 30px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .placeholder .icon { font-size: 48px; margin-bottom: 16px; }
+        .placeholder h2 { color: #333; margin-bottom: 10px; }
+        .placeholder p { color: #888; font-size: 14px; line-height: 1.8; }
+        .placeholder .warn {
+            color: #d9534f;
+            font-weight: bold;
+            margin-top: 16px;
+            font-size: 15px;
+        }
+
+        /* ===== 主体容器 ===== */
+        #app { display: none; max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+        /* ===== 表单区 ===== */
+        .form-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .form-section h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ffe5a8;
+        }
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .form-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-row input:focus { border-color: #ffc107; }
+        .form-section textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            outline: none;
+            margin-bottom: 14px;
+            transition: border-color 0.2s;
+        }
+        .form-section textarea:focus { border-color: #ffc107; }
+        .form-actions { display: flex; justify-content: flex-end; }
+        .btn-submit {
+            padding: 10px 28px;
+            background: #ffc107;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-submit:hover { background: #e6ac00; }
+
+        /* ===== 列表区 ===== */
+        .list-section h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 14px;
+        }
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            background: #fff;
+        }
+        .search-bar input:focus { border-color: #ffc107; }
+        .paper-count {
+            font-size: 13px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        /* ===== JSON 操作栏 ===== */
+        .json-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .json-btn {
+            padding: 7px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #555;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .json-btn:hover { border-color: #ffc107; background: #fffdf5; color: #333; }
+        .json-btn.danger:hover { border-color: #d9534f; background: #fff5f5; color: #d9534f; }
+        .json-btn.active { border-color: #ffc107; background: #fff8e1; color: #333; }
+        .json-btn input[type="file"] { display: none; }
+
+        /* ===== JSON 预览面板 ===== */
+        .json-viewer {
+            display: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            max-height: 350px;
+            overflow: auto;
+            position: relative;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        }
+        .json-viewer.show { display: block; }
+        .json-viewer .viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        .json-viewer .viewer-title {
+            font-size: 13px;
+            color: #888;
+            font-weight: bold;
+        }
+        .json-viewer .btn-copy {
+            padding: 4px 12px;
+            background: #333;
+            color: #ccc;
+            border: 1px solid #555;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .json-viewer .btn-copy:hover { background: #444; color: #fff; }
+        .json-viewer pre {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 0;
+        }
+        /* JSON 语法高亮 */
+        .json-key { color: #9cdcfe; }
+        .json-string { color: #ce9178; }
+        .json-number { color: #b5cea8; }
+        .json-bool { color: #569cd6; }
+        .json-null { color: #569cd6; }
+        .json-bracket { color: #ffd700; }
+
+        /* ===== 论文卡片 ===== */
+        .paper-list { display: flex; flex-direction: column; gap: 14px; }
+        .paper-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: box-shadow 0.2s, transform 0.15s;
+            position: relative;
+        }
+        .paper-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .paper-card .paper-title {
+            font-size: 17px;
+            font-weight: bold;
+            color: #222;
+            margin-bottom: 6px;
+        }
+        .paper-card .paper-meta {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        .paper-card .paper-meta span { margin-right: 16px; }
+        .paper-card .paper-abstract {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.7;
+        }
+        .paper-card .btn-delete {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            background: none;
+            border: 1px solid #e0e0e0;
+            color: #bbb;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .paper-card .btn-delete:hover {
+            color: #d9534f;
+            border-color: #d9534f;
+            background: #fff5f5;
+        }
+        .empty-tip {
+            text-align: center;
+            padding: 40px;
+            color: #bbb;
+            font-size: 15px;
+        }
+
+        /* ===== Toast 提示 ===== */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-80px);
+            background: #333;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success { background: #28a745; }
+        .toast.error { background: #d9534f; }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 600px) {
+            .form-row { flex-direction: column; }
+            .top-font .right { display: none; }
+            .json-actions { gap: 6px; }
+            .json-btn { padding: 6px 10px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部 -->
+    <div class="top-font">
+        <div class="center">Shit论文网</div>
+        <div class="right">登录者:<span id="name"></span></div>
+    </div>
+    <div class="time-bar" id="timeBar">当前时间：加载中...</div>
+
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 无JS占位 -->
+    <div id="placeholder" class="placeholder">
+        <div class="icon">⏳</div>
+        <h2>论文展示系统加载中...</h2>
+        <p>正在初始化系统，请稍候。<br>如果长时间停留在本页面，请检查浏览器是否禁用了 JavaScript。</p>
+        <noscript>
+            <p class="warn">⚠️ 您的浏览器禁用了 JavaScript！<br>本系统依赖 JS 运行，请开启后刷新页面。</p>
+        </noscript>
+    </div>
+
+    <!-- JS主内容 -->
+    <div id="app">
+        <!-- 表单 -->
+        <div class="form-section">
+            <h2>📝 发布新论文</h2>
+            <form id="paperForm">
+                <div class="form-row">
+                    <input type="text" id="paperTitle" placeholder="论文标题" required maxlength="100">
+                    <input type="text" id="paperAuthor" placeholder="作者" required maxlength="40">
+                </div>
+                <textarea id="paperAbstract" placeholder="论文摘要 / 简介..." required maxlength="500"></textarea>
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">提交论文</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 列表 -->
+        <div class="list-section">
+            <h2>📚 论文列表</h2>
+
+            <!-- 搜索 -->
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="搜索标题 / 作者 / 摘要...">
+                <span class="paper-count" id="paperCount"></span>
+            </div>
+
+            <!-- JSON 操作栏 -->
+            <div class="json-actions">
+                <button class="json-btn" id="btnExport">📥 导出 JSON</button>
+                <label class="json-btn" id="btnImportLabel">
+                    📤 导入 JSON
+                    <input type="file" id="fileImport" accept=".json">
+                </label>
+                <button class="json-btn" id="btnViewJson">👁 查看 JSON</button>
+                <button class="json-btn danger" id="btnClear">🗑️ 清空数据</button>
+                <button class="json-btn" id="btnReset">🔄 恢复示例</button>
+            </div>
+
+            <!-- JSON 预览面板 -->
+            <div class="json-viewer" id="jsonViewer">
+                <div class="viewer-header">
+                    <span class="viewer-title">📄 papers.json</span>
+                    <button class="btn-copy" id="btnCopyJson">📋 复制</button>
+                </div>
+                <pre id="jsonContent"></pre>
+            </div>
+
+            <!-- 论文列表 -->
+            <div id="paperList" class="paper-list"></div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // ===== 用户名 =====
+        var name = prompt("请输入您的名字：");
+        if (name) document.getElementById("name").innerText = name;
+
+        // ===== 动态时间 =====
+        function updateTime() {
+            var now = new Date();
+            var y = now.getFullYear();
+            var m = String(now.getMonth() + 1).padStart(2, '0');
+            var d = String(now.getDate()).padStart(2, '0');
+            var h = String(now.getHours()).padStart(2, '0');
+            var mi = String(now.getMinutes()).padStart(2, '0');
+            var s = String(now.getSeconds()).padStart(2, '0');
+            var w = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][now.getDay()];
+            document.getElementById("timeBar").innerText =
+                '当前时间：' + y + '年' + m + '月' + d + '日 ' + w + ' ' + h + ':' + mi + ':' + s;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // ===== 切换占位 → 主内容 =====
+        document.getElementById("placeholder").style.display = "none";
+        document.getElementById("app").style.display = "block";
+
+        // ===== Toast 提示 =====
+        function showToast(msg, type) {
+            var t = document.getElementById("toast");
+            t.innerText = msg;
+            t.className = "toast " + (type || "");
+            setTimeout(function() { t.classList.add("show"); }, 10);
+            setTimeout(function() { t.classList.remove("show"); }, 2200);
+        }
+
+        // ===== 论文数据 =====
+        var STORAGE_KEY = "shit_papers";
+
+        var defaultPapers = [
+            {
+                id: 1,
+                title: "基于深度学习的自然语言处理综述",
+                author: "张三",
+                abstract: "本文系统性地回顾了近年来深度学习在自然语言处理领域的主要进展，包括Transformer架构、预训练语言模型以及大模型微调技术的演变与未来趋势。",
+                date: "2026-07-01 10:30"
+            },
+            {
+                id: 2,
+                title: "量子计算在密码学中的应用与挑战",
+                author: "李四",
+                abstract: "随着量子计算硬件的快速发展，传统密码学面临前所未有的安全威胁。本文探讨了后量子密码学的主要方案及其在实际部署中的性能表现。",
+                date: "2026-07-05 14:20"
+            },
+            {
+                id: 3,
+                title: "城市热岛效应对居民睡眠质量的影响研究",
+                author: "王五",
+                abstract: "通过对全国32个主要城市的遥感温度数据与居民健康调查数据进行关联分析，揭示了城市热岛强度与睡眠障碍之间的显著正相关关系。",
+                date: "2026-07-07 09:15"
+            }
+        ];
+
+        function loadPapers() {
+            try {
+                var data = localStorage.getItem(STORAGE_KEY);
+                if (data) return JSON.parse(data);
+            } catch(e) {}
+            return JSON.parse(JSON.stringify(defaultPapers));
+        }
+
+        function savePapers(arr) {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(e) {}
+        }
+
+        var papers = loadPapers();
+
+        // ===== 渲染列表 =====
+        var paperListEl  = document.getElementById("paperList");
+        var paperCountEl = document.getElementById("paperCount");
+        var searchInput  = document.getElementById("searchInput");
+
+        function escapeHtml(str) {
+            var div = document.createElement("div");
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        function renderList(filter) {
+            var keyword = (filter || "").toLowerCase().trim();
+            var filtered = papers.filter(function(p) {
+                if (!keyword) return true;
+                return p.title.toLowerCase().indexOf(keyword) !== -1
+
+                    || p.author.toLowerCase().indexOf(keyword) !== -1
+                    || p.abstract.toLowerCase().indexOf(keyword) !== -1;
+            });
+
+            paperCountEl.innerText = "共 " + filtered.length + " 篇";
+            paperListEl.innerHTML = "";
+
+            if (filtered.length === 0) {
+                paperListEl.innerHTML = '<div class="empty-tip">📭 暂无论文' + (keyword ? '（未找到匹配结果）' : '') + '</div>';
+                return;
+            }
+
+            filtered.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+
+            filtered.forEach(function(p) {
+                var card = document.createElement("div");
+                card.className = "paper-card";
+                card.innerHTML =
+                    '<div class="paper-title">' + escapeHtml(p.title) + '</div>' +
+                    '<div class="paper-meta"><span>👤 ' + escapeHtml(p.author) + '</span><span>🕐 ' + escapeHtml(p.date) + '</span></div>' +
+                    '<div class="paper-abstract">' + escapeHtml(p.abstract) + '</div>' +
+                    '<button class="btn-delete" data-id="' + p.id + '">删除</button>';
+                paperListEl.appendChild(card);
+            });
+        }
+
+        renderList("");
+
+        // ===== 搜索 =====
+        searchInput.addEventListener("input", function() { renderList(this.value); });
+
+        // ===== 表单提交 =====
+        document.getElementById("paperForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            var title    = document.getElementById("paperTitle").value.trim();
+            var author   = document.getElementById("paperAuthor").value.trim();
+            var abstract = document.getElementById("paperAbstract").value.trim();
+            if (!title || !author || !abstract) return;
+
+            var now = new Date();
+            var dateStr = now.getFullYear() + '-' +
+                String(now.getMonth()+1).padStart(2,'0') + '-' +
+                String(now.getDate()).padStart(2,'0') + ' ' +
+                String(now.getHours()).padStart(2,'0') + ':' +
+                String(now.getMinutes()).padStart(2,'0');
+
+            papers.unshift({ id: Date.now(), title: title, author: author, abstract: abstract, date: dateStr });
+            savePapers(papers);
+            renderList(searchInput.value);
+            refreshJsonViewer();
+            this.reset();
+            document.getElementById("paperTitle").focus();
+            showToast("✅ 论文发布成功！", "success");
+        });
+
+        // ===== 删除 =====
+        paperListEl.addEventListener("click", function(e) {
+            if (e.target.classList.contains("btn-delete")) {
+                var id = Number(e.target.getAttribute("data-id"));
+                if (confirm("确定要删除这篇论文吗？")) {
+                    papers = papers.filter(function(p) { return p.id !== id; });
+                    savePapers(papers);
+                    renderList(searchInput.value);
+                    refreshJsonViewer();
+                    showToast("🗑️ 已删除", "");
+                }
+            }
+        });
+
+        // =============================================
+        //  ============  JSON 功能  =================
+        // =============================================
+
+        // ----- JSON 语法高亮 -----
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(
+                /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+                function (match) {
+                    var cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            cls = 'json-string';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-bool';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                }
+            );
+        }
+
+        // ----- 刷新 JSON 预览面板 -----
+        var jsonViewer  = document.getElementById("jsonViewer");
+        var jsonContent = document.getElementById("jsonContent");
+        var btnViewJson = document.getElementById("btnViewJson");
+
+        function refreshJsonViewer() {
+            var raw = JSON.stringify(papers, null, 2);
+            jsonContent.innerHTML = syntaxHighlight(raw);
+        }
+        refreshJsonViewer();
+
+        // 查看 / 隐藏 JSON
+        btnViewJson.addEventListener("click", function() {
+            var isShow = jsonViewer.classList.toggle("show");
+            this.classList.toggle("active", isShow);
+            if (isShow) refreshJsonViewer();
+        });
+
+        // ----- 📥 导出 JSON -----
+        document.getElementById("btnExport").addEventListener("click", function() {
+            if (papers.length === 0) {
+                showToast("⚠️ 没有数据可导出", "error");
+                return;
+            }
+            var jsonStr = JSON.stringify(papers, null, 2);
+            var blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+            var url  = URL.createObjectURL(blob);
+            var a    = document.createElement("a");
+            a.href     = url;
+            a.download = "shit_papers_" + Date.now() + ".json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("📥 JSON 已导出（" + papers.length + " 篇）", "success");
+        });
+
+        // ----- 📤 导入 JSON -----
+        document.getElementById("fileImport").addEventListener("change", function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    var imported = JSON.parse(event.target.result);
+
+                    // 校验：必须是数组
+                    if (!Array.isArray(imported)) {
+                        showToast("❌ JSON 格式错误：根节点必须是数组 []", "error");
+                        return;
+                    }
+
+                    // 校验：每个对象必须有必要字段
+                    var valid = imported.every(function(item) {
+                        return item.title && item.author && item.abstract;
+                    });
+                    if (!valid) {
+                        showToast("❌ 数据缺少必要字段（title/author/abstract）", "error");
+                        return;
+                    }
+
+                    // 补全缺失字段
+                    imported = imported.map(function(item) {
+                        return {
+                            id:       item.id || Date.now() + Math.random(),
+                            title:    item.title,
+                            author:   item.author,
+                            abstract: item.abstract,
+                            date:     item.date || new Date().toISOString().slice(0, 16).replace('T', ' ')
+                        };
+                    });
+
+                    // 合并去重（按 id）
+                    var existIds = {};
+                    papers.forEach(function(p) { existIds[p.id] = true; });
+                    var added = 0;
+                    imported.forEach(function(p) {
+                        if (!existIds[p.id]) {
+                            papers.push(p);
+                            added++;
+                        }
+                    });
+
+                    savePapers(papers);
+                    renderList(searchInput.value);
+                    refreshJsonViewer();
+                    showToast("📤 导入成功！新增 " + added + " 篇，跳过 " + (imported.length - added) + " 篇重复", "success");
+
+                } catch (err) {
+                    showToast("❌ JSON 解析失败：" + err.message, "error");
+                }
+            };
+            reader.readAsText(file);
+            // 重置 input，允许再次选择同一文件
+            this.value = "";
+        });
+
+        // ----- 📋 复制 JSON -----
+        document.getElementById("btnCopyJson").addEventListener("click", function() {
+            var raw = JSON.stringify(papers, null, 2);
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(raw).then(function() {
+                    showToast("📋 已复制到剪贴板", "success");
+                });
+            } else {
+                // 降级方案
+                var ta = document.createElement("textarea");
+                ta.value = raw;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                showToast("📋 已复制到剪贴板", "success");
+            }
+        });
+
+        // ----- 🗑️ 清空数据 -----
+        document.getElementById("btnClear").addEventListener("click", function() {
+            if (papers.length === 0) {
+                showToast("已经是空的了", "");
+                return;
+            }
+            if (confirm("确定要清空所有 " + papers.length + " 篇论文吗？此操作不可恢复！")) {
+                papers = [];
+                savePapers(papers);
+                renderList(searchInput.value);
+                refreshJsonViewer();
+                showToast("🗑️ 已清空所有数据", "");
+            }
+        });
+
+        // ----- 🔄 恢复示例 -----
+        document.getElementById("btnReset").addEventListener("click", function() {
+            if (confirm("确定要恢复为示例数据吗？当前数据将被覆盖！")) {
+                papers = JSON.parse(JSON.stringify(defaultPapers));
+                savePapers(papers);
+                renderList(searchInput.value);
+                refreshJsonViewer();
+                showToast("🔄 已恢复示例数据", "success");
+            }
+        });
+
+    })();
+    </script>
+
+</body>
+</html>
