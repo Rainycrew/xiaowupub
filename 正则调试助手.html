@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Python 正则表达式调试与代码生成器</title>
+    <style>
+        body { font-family: 'Consolas', 'Microsoft YaHei', monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; display: flex; gap: 20px; height: 95vh; margin: 0; }
+        .panel { flex: 1; display: flex; flex-direction: column; background: #252526; padding: 15px; border-radius: 8px; border: 1px solid #3e3e42; }
+        h3 { margin-top: 0; color: #569cd6; border-bottom: 1px solid #3e3e42; padding-bottom: 10px; }
+        textarea, input { background: #1e1e1e; color: #ce9178; border: 1px solid #3e3e42; padding: 10px; border-radius: 4px; font-family: inherit; font-size: 14px; outline: none; resize: none; }
+        textarea:focus, input:focus { border-color: #007acc; }
+        #regex-input { color: #9cdcfe; margin-bottom: 10px; }
+        #html-input { flex: 1; color: #d4d4d4; }
+        #result-box { flex: 1; background: #1e1e1e; border: 1px solid #3e3e42; padding: 10px; border-radius: 4px; overflow-y: auto; white-space: pre-wrap; margin-top: 10px; }
+        .highlight { background-color: #264f78; color: white; font-weight: bold; border-radius: 2px; }
+        .controls { margin: 10px 0; display: flex; gap: 15px; align-items: center; }
+        label { color: #9cdcfe; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        #python-code { height: 150px; color: #b5cea8; margin-top: 10px; }
+        button { background: #0e639c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1177bb; }
+        #hint-area { margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+    <!-- 左侧：输入区 -->
+    <div class="panel">
+        <h3>1. 输入正则表达式</h3>
+        <input type="text" id="regex-input" placeholder='例如：<dd.*?src="(.*?)".*?alt="(.*?)".*?</dd>' value='<dd class="content content-pic">.*?<img src="(.*?)" alt="(.*?)".*?</dd>'>
+
+        <div class="controls">
+            <label><input type="checkbox" id="flag-s" checked> re.S (跨行匹配/DOTALL)</label>
+            <label><input type="checkbox" id="flag-i"> re.I (忽略大小写)</label>
+            <label><input type="checkbox" id="flag-m"> re.M (多行模式)</label>
+        </div>
+
+        <h3>2. 粘贴待匹配的 HTML</h3>
+        <textarea id="html-input" placeholder="在这里粘贴你的 HTML 代码..."><dd class="content content-pic">
+				<img src="/Uploads/joke/2025/02/12/67ac973f7dc22.png" alt="有不干净的东西"  val="/Uploads/joke/2025/02/12/67ac973f7dc22.png">			</dd></textarea>
+    </div>
+
+    <!-- 右侧：结果与代码生成区 -->
+    <div class="panel">
+        <h3>3. 实时匹配预览</h3>
+        <div id="result-box">等待输入...</div>
+        <div style="margin-top: 5px; color: #6a9955;" id="match-info"></div>
+
+        <h3>4. 一键生成Python代码+匹配结果</h3>
+        <textarea id="python-code" readonly></textarea>
+        <!-- 新增的提示区域 -->
+        <div id="hint-area"></div>
+        <button onclick="copyCode()">复制 Python 代码</button>
+    </div>
+
+    <script>
+        const regexInput = document.getElementById('regex-input');
+        const htmlInput = document.getElementById('html-input');
+        const resultBox = document.getElementById('result-box');
+        const matchInfo = document.getElementById('match-info');
+        const pythonCode = document.getElementById('python-code');
+        const hintArea = document.getElementById('hint-area');
+        const flagS = document.getElementById('flag-s');
+        const flagI = document.getElementById('flag-i');
+        const flagM = document.getElementById('flag-m');
+
+        // 一键给正则首尾加上括号
+        function autoAddBrackets() {
+            let currentRegex = regexInput.value;
+            // 如果首尾已经有括号了，就不重复加
+            if (!currentRegex.startsWith('(') || !currentRegex.endsWith(')')) {
+                regexInput.value = `(${currentRegex})`;
+                update(); // 触发更新
+            }
+        }
+
+        function update() {
+            const pattern = regexInput.value;
+            const text = htmlInput.value;
+
+            if (!pattern || !text) {
+                resultBox.innerHTML = text || '等待输入...';
+                pythonCode.value = '';
+                hintArea.innerHTML = '';
+                matchInfo.innerText = '';
+                return;
+            }
+
+            // 组装 JS 的正则标志
+            let jsFlags = 'g';
+            if (flagS.checked) jsFlags += 's';
+            if (flagI.checked) jsFlags += 'i';
+
+            try {
+                const regex = new RegExp(pattern, jsFlags);
+                let match;
+                let matchCount = 0;
+                let lastIndex = 0;
+                let highlightedHTML = '';
+                let groupsInfo = [];
+
+                // 执行匹配并高亮
+                while ((match = regex.exec(text)) !== null) {
+                    matchCount++;
+                    highlightedHTML += text.substring(lastIndex, match.index).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    highlightedHTML += `<span class="highlight">${match[0].replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`;
+                    lastIndex = regex.lastIndex;
+
+                    // 提取捕获组信息用于生成代码注释
+                    if (match.length > 1) {
+                        groupsInfo.push(`  # 第 ${matchCount} 组结果: ${JSON.stringify(match.slice(1))}`);
+                    }
+
+                    if (match.index === regex.lastIndex) regex.lastIndex++;
+                }
+                highlightedHTML += text.substring(lastIndex).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+                resultBox.innerHTML = highlightedHTML;
+                matchInfo.innerText = `✅ 匹配成功！共找到 ${matchCount} 处结果。`;
+
+                // 动态生成 Python 代码 (传入是否匹配成功的状态)
+                generatePythonCode(pattern, groupsInfo, matchCount > 0);
+
+            } catch (e) {
+                resultBox.innerHTML = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                matchInfo.innerText = `❌ 正则语法错误: ${e.message}`;
+                pythonCode.value = '# 正则表达式有语法错误，请检查';
+                hintArea.innerHTML = '';
+            }
+        }
+
+        function generatePythonCode(pattern, groupsInfo, hasMatch) {
+            let flags = [];
+            if (flagS.checked) flags.push('re.S');
+            if (flagI.checked) flags.push('re.I');
+            if (flagM.checked) flags.push('re.M');
+            const flagStr = flags.length > 0 ? `, ${flags.join(' | ')}` : '';
+
+            // 自动把双引号转义，防止打断 Python 字符串
+            const safePattern = pattern.replace(/"/g, '\\"');
+
+            let code = `import re\n\nhtml = """${htmlInput.value.replace(/"/g, '\\"')}"""\n\n`;
+            code += `# 正则表达式\nregex = "${safePattern}"\n`;
+            code += `s = re.compile(regex${flagStr})\n`;
+            code += `result = s.findall(html)\n\n`;
+            code += `print(result)\n`;
+
+            // 动态生成预期结果提示
+            let hintHTML = '';
+            if (groupsInfo.length > 0) {
+                code += `\n# 预期匹配结果：\n` + groupsInfo.join('\n');
+            } else if (hasMatch) {
+                // 匹配到了内容，但没有分组（没有括号）时的友好提示
+                code += `\n# 提示：当前正则匹配到了内容，但没有使用括号 () 进行分组。`;
+                code += `\n# 如果你想提取特定部分，请在正则中添加括号。`;
+
+                hintHTML = `<div style="margin-top:10px; padding:10px; background:#3c3c3c; border-left:3px solid #e74c3c; font-size:13px; color: #d4d4d4;">
+                    ⚠️ 匹配成功但未提取分组。<button onclick="autoAddBrackets()" style="margin-left:10px; padding:2px 8px; font-size:12px; cursor:pointer; background:#0e639c; color:white; border:none; border-radius:3px;">✨ 一键给正则加括号</button>
+                </div>`;
+            }
+            pythonCode.value = code;
+            hintArea.innerHTML = hintHTML;
+        }
+
+        function copyCode() {
+            pythonCode.select();
+            document.execCommand('copy');
+            alert('Python 代码已复制到剪贴板！');
+        }
+
+        // 绑定实时监听事件
+        [regexInput, htmlInput, flagS, flagI, flagM].forEach(el => el.addEventListener('input', update));
+        [flagS, flagI, flagM].forEach(el => el.addEventListener('change', update));
+
+        // 初始化运行一次
+        update();
+    </script>
+</body>
+</html>
